@@ -1,0 +1,120 @@
+/**
+ * Repository: {{pascalCase name}}
+ *
+ * Acceso a datos para {{name}}.
+ *
+ * @module modules/{{dashCase name}}/repositories
+ */
+
+import { {{pascalCase name}} } from '../services/{{dashCase name}}.service.js';
+
+// Importar cliente Prisma cuando este configurado
+// import { prisma } from '../../../shared/database/prisma.js';
+
+interface FindManyOptions {
+  skip?: number;
+  take?: number;
+  where?: Record<string, unknown>;
+  orderBy?: Record<string, 'asc' | 'desc'>;
+}
+
+class {{pascalCase name}}Repository {
+  /**
+   * Busca multiples registros
+   */
+  async findMany(options: FindManyOptions): Promise<{{pascalCase name}}[]> {
+    // TODO: Implementar con Prisma
+    // return prisma.{{camelCase name}}.findMany({
+    //   skip: options.skip,
+    //   take: options.take,
+    //   where: {
+    //     ...options.where,
+    //     deletedAt: null,
+    //   },
+    //   orderBy: options.orderBy || { createdAt: 'desc' },
+    // });
+
+    return [];
+  }
+
+  /**
+   * Cuenta registros
+   */
+  async count(where?: Record<string, unknown>): Promise<number> {
+    // TODO: Implementar con Prisma
+    // return prisma.{{camelCase name}}.count({
+    //   where: {
+    //     ...where,
+    //     deletedAt: null,
+    //   },
+    // });
+
+    return 0;
+  }
+
+  /**
+   * Busca por ID
+   */
+  async findById(id: string): Promise<{{pascalCase name}} | null> {
+    // TODO: Implementar con Prisma
+    // return prisma.{{camelCase name}}.findFirst({
+    //   where: {
+    //     id,
+    //     deletedAt: null,
+    //   },
+    // });
+
+    return null;
+  }
+
+  /**
+   * Crea un registro
+   */
+  async create(data: Omit<{{pascalCase name}}, 'id' | 'createdAt' | 'updatedAt'>): Promise<{{pascalCase name}}> {
+    // TODO: Implementar con Prisma
+    // return prisma.{{camelCase name}}.create({ data });
+
+    return {
+      id: crypto.randomUUID(),
+      ...data,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    } as {{pascalCase name}};
+  }
+
+  /**
+   * Actualiza un registro
+   */
+  async update(id: string, data: Partial<{{pascalCase name}}>): Promise<{{pascalCase name}}> {
+    // TODO: Implementar con Prisma
+    // return prisma.{{camelCase name}}.update({
+    //   where: { id },
+    //   data: {
+    //     ...data,
+    //     updatedAt: new Date(),
+    //   },
+    // });
+
+    return {
+      id,
+      ...data,
+      updatedAt: new Date(),
+    } as {{pascalCase name}};
+  }
+
+  /**
+   * Soft delete
+   */
+  async softDelete(id: string, userId: string): Promise<void> {
+    // TODO: Implementar con Prisma
+    // await prisma.{{camelCase name}}.update({
+    //   where: { id },
+    //   data: {
+    //     deletedAt: new Date(),
+    //     deletedBy: userId,
+    //   },
+    // });
+  }
+}
+
+export const {{camelCase name}}Repository = new {{pascalCase name}}Repository();

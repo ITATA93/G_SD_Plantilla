@@ -1,0 +1,1 @@
+﻿{ "version": "3.0", "agents": [ { "name": "code-analyst", "vendor": "gemini" }, { "name": "doc-writer", "vendor": "gemini" }, { "name": "code-reviewer", "vendor": "claude" } ], "max_parallel_agents": 3 }

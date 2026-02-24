@@ -1,0 +1,115 @@
+/**
+ * Controller: {{pascalCase name}}
+ *
+ * Maneja las solicitudes HTTP para el recurso {{name}}.
+ *
+ * @module modules/{{dashCase name}}/controllers
+ */
+
+import { Request, Response, NextFunction } from 'express';
+import { {{camelCase name}}Service } from '../services/{{dashCase name}}.service.js';
+import { Create{{pascalCase name}}Dto, Update{{pascalCase name}}Dto, {{pascalCase name}}QueryDto } from '../dto/{{dashCase name}}.dto.js';
+import { createCrudAuditor } from '../../../core/audit/services/audit.service.js';
+
+const auditor = createCrudAuditor('{{pascalCase name}}');
+
+export class {{pascalCase name}}Controller {
+  /**
+   * Lista todos los {{namePlural}}
+   */
+  async list(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const query = req.query as unknown as {{pascalCase name}}QueryDto;
+      const result = await {{camelCase name}}Service.findAll(query);
+
+      await auditor.list(req.user!.run, query);
+
+      res.json({
+        success: true,
+        data: result.data,
+        pagination: result.pagination,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Obtiene un {{name}} por ID
+   */
+  async getById(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const item = await {{camelCase name}}Service.findById(id);
+
+      await auditor.read(req.user!.run, id);
+
+      res.json({
+        success: true,
+        data: item,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Crea un nuevo {{name}}
+   */
+  async create(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const dto: Create{{pascalCase name}}Dto = req.body;
+      const item = await {{camelCase name}}Service.create(dto, req.user!.run);
+
+      await auditor.create(req.user!.run, item.id);
+
+      res.status(201).json({
+        success: true,
+        data: item,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Actualiza un {{name}}
+   */
+  async update(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      const dto: Update{{pascalCase name}}Dto = req.body;
+      const item = await {{camelCase name}}Service.update(id, dto, req.user!.run);
+
+      await auditor.update(req.user!.run, id, dto);
+
+      res.json({
+        success: true,
+        data: item,
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+
+  /**
+   * Elimina un {{name}}
+   */
+  async delete(req: Request, res: Response, next: NextFunction): Promise<void> {
+    try {
+      const { id } = req.params;
+      await {{camelCase name}}Service.delete(id, req.user!.run);
+
+      await auditor.delete(req.user!.run, id);
+
+      res.json({
+        success: true,
+        message: '{{pascalCase name}} eliminado exitosamente',
+      });
+    } catch (error) {
+      next(error);
+    }
+  }
+}
+
+export const {{camelCase name}}Controller = new {{pascalCase name}}Controller();

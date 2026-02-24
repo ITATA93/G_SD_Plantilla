@@ -1,0 +1,114 @@
+/**
+ * Service: {{pascalCase name}}
+ *
+ * Logica de negocio para {{name}}.
+ *
+ * @module modules/{{dashCase name}}/services
+ */
+
+import { {{camelCase name}}Repository } from '../repositories/{{dashCase name}}.repository.js';
+import { Create{{pascalCase name}}Dto, Update{{pascalCase name}}Dto, {{pascalCase name}}QueryDto } from '../dto/{{dashCase name}}.dto.js';
+import { NotFoundError } from '../../../shared/utils/errors.js';
+import { logger } from '../../../shared/utils/logger.js';
+
+export interface {{pascalCase name}} {
+  id: string;
+  // Agregar campos del modelo
+  createdAt: Date;
+  updatedAt: Date;
+  createdBy: string;
+  updatedBy?: string;
+}
+
+export interface PaginatedResult<T> {
+  data: T[];
+  pagination: {
+    total: number;
+    page: number;
+    limit: number;
+    totalPages: number;
+  };
+}
+
+class {{pascalCase name}}Service {
+  /**
+   * Obtiene todos los {{namePlural}} con paginacion
+   */
+  async findAll(query: {{pascalCase name}}QueryDto): Promise<PaginatedResult<{{pascalCase name}}>> {
+    const { page = 1, limit = 10, ...filters } = query;
+    const skip = (page - 1) * limit;
+
+    const [data, total] = await Promise.all([
+      {{camelCase name}}Repository.findMany({ skip, take: limit, where: filters }),
+      {{camelCase name}}Repository.count(filters),
+    ]);
+
+    return {
+      data,
+      pagination: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
+  /**
+   * Obtiene un {{name}} por ID
+   */
+  async findById(id: string): Promise<{{pascalCase name}}> {
+    const item = await {{camelCase name}}Repository.findById(id);
+
+    if (!item) {
+      throw new NotFoundError('{{pascalCase name}}', id);
+    }
+
+    return item;
+  }
+
+  /**
+   * Crea un nuevo {{name}}
+   */
+  async create(dto: Create{{pascalCase name}}Dto, userId: string): Promise<{{pascalCase name}}> {
+    const item = await {{camelCase name}}Repository.create({
+      ...dto,
+      createdBy: userId,
+    });
+
+    logger.info('{{pascalCase name}} creado', { id: item.id, userId });
+
+    return item;
+  }
+
+  /**
+   * Actualiza un {{name}}
+   */
+  async update(id: string, dto: Update{{pascalCase name}}Dto, userId: string): Promise<{{pascalCase name}}> {
+    // Verificar que existe
+    await this.findById(id);
+
+    const item = await {{camelCase name}}Repository.update(id, {
+      ...dto,
+      updatedBy: userId,
+    });
+
+    logger.info('{{pascalCase name}} actualizado', { id, userId });
+
+    return item;
+  }
+
+  /**
+   * Elimina un {{name}} (soft delete)
+   */
+  async delete(id: string, userId: string): Promise<void> {
+    // Verificar que existe
+    await this.findById(id);
+
+    await {{camelCase name}}Repository.softDelete(id, userId);
+
+    logger.info('{{pascalCase name}} eliminado', { id, userId });
+  }
+}
+
+export const {{camelCase name}}Service = new {{pascalCase name}}Service();

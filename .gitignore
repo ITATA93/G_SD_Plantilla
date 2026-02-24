@@ -1,0 +1,62 @@
+# Dependencias
+node_modules/
+.pnp/
+.pnp.js
+
+# Build
+dist/
+build/
+*.tsbuildinfo
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+.nyc_output/
+
+# Prisma
+prisma/*.db
+prisma/*.db-journal
+
+# Cache
+.cache/
+.parcel-cache/
+.eslintcache
+
+# Temporal
+tmp/
+temp/
+*.tmp
+
+# Storage local
+storage/
+uploads/
+
+# Secrets (nunca subir)
+*.pem
+*.key
+*.crt
+credentials.json
+secrets.json

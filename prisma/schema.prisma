@@ -1,0 +1,113 @@
+// Schema Prisma para Plantilla Gobierno Digital Chile
+// https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =====================================================
+// MODELOS BASE - Requeridos por normativa
+// =====================================================
+
+/// Registro de auditoria - Ley 21.180 y 21.663
+/// Retener minimo 365 dias
+model AuditLog {
+  id           String   @id @default(uuid())
+  timestamp    DateTime @default(now())
+  action       String   // AUTH_LOGIN, RESOURCE_CREATE, etc.
+  userId       String?  // RUN del usuario
+  sessionId    String?
+  resourceType String?
+  resourceId   String?
+  ipAddress    String?
+  userAgent    String?
+  details      Json?    // Detalles adicionales (sanitizados)
+  result       String   // success | failure
+  errorMessage String?
+
+  @@index([timestamp])
+  @@index([userId])
+  @@index([action])
+  @@index([resourceType, resourceId])
+  @@map("audit_logs")
+}
+
+/// Sesiones de usuario
+model Session {
+  id           String   @id @default(uuid())
+  run          String   // RUN del usuario
+  nombres      String
+  apellidos    String
+  idToken      String   @db.Text // Token de ClaveUnica
+  ipAddress    String?
+  userAgent    String?
+  createdAt    DateTime @default(now())
+  lastActivity DateTime @default(now())
+  expiresAt    DateTime
+
+  @@index([run])
+  @@index([expiresAt])
+  @@map("sessions")
+}
+
+// =====================================================
+// EJEMPLO: Modelo con campos de auditoria
+// Usar como base para modelos de negocio
+// =====================================================
+
+/// Ejemplo de modelo con campos de auditoria
+model ExampleEntity {
+  id        String   @id @default(uuid())
+  nombre    String
+  estado    String   @default("activo")
+
+  // Campos de auditoria (obligatorios)
+  createdAt DateTime @default(now())
+  createdBy String   // RUN del creador
+  updatedAt DateTime @updatedAt
+  updatedBy String?  // RUN del ultimo editor
+
+  // Soft delete (recomendado para trazabilidad)
+  deletedAt DateTime?
+  deletedBy String?
+
+  @@index([estado])
+  @@index([createdAt])
+  @@map("example_entities")
+}
+
+// =====================================================
+// MODELOS DE SALUD (Opcional - para modulos FHIR)
+// =====================================================
+
+/// Paciente - Alineado con FHIR Patient
+model Patient {
+  id              String   @id @default(uuid())
+  fhirId          String?  @unique // ID en servidor FHIR
+  run             String   @unique // RUN del paciente
+  nombres         String
+  apellidoPaterno String
+  apellidoMaterno String?
+  fechaNacimiento DateTime
+  genero          String   // male | female | other | unknown
+  telefono        String?
+  email           String?
+  direccion       Json?    // Estructura de direccion
+
+  // Auditoria
+  createdAt DateTime  @default(now())
+  createdBy String
+  updatedAt DateTime  @updatedAt
+  updatedBy String?
+  deletedAt DateTime?
+  deletedBy String?
+
+  @@index([run])
+  @@index([apellidoPaterno, apellidoMaterno])
+  @@map("patients")
+}

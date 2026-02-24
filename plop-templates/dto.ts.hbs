@@ -1,0 +1,39 @@
+/**
+ * DTOs: {{pascalCase name}}
+ *
+ * Data Transfer Objects para validacion de entrada.
+ *
+ * @module modules/{{dashCase name}}/dto
+ */
+
+import { z } from 'zod';
+
+/**
+ * DTO para crear un {{name}}
+ */
+export const create{{pascalCase name}}Schema = z.object({
+  // Definir campos requeridos
+  // nombre: z.string().min(1).max(255),
+  // descripcion: z.string().optional(),
+});
+
+export type Create{{pascalCase name}}Dto = z.infer<typeof create{{pascalCase name}}Schema>;
+
+/**
+ * DTO para actualizar un {{name}}
+ */
+export const update{{pascalCase name}}Schema = create{{pascalCase name}}Schema.partial();
+
+export type Update{{pascalCase name}}Dto = z.infer<typeof update{{pascalCase name}}Schema>;
+
+/**
+ * DTO para query de busqueda
+ */
+export const {{camelCase name}}QuerySchema = z.object({
+  page: z.coerce.number().min(1).default(1),
+  limit: z.coerce.number().min(1).max(100).default(10),
+  search: z.string().optional(),
+  // Agregar filtros adicionales segun necesidad
+});
+
+export type {{pascalCase name}}QueryDto = z.infer<typeof {{camelCase name}}QuerySchema>;

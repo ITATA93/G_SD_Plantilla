@@ -1,0 +1,97 @@
+/**
+ * Routes: {{pascalCase name}}
+ *
+ * Define las rutas REST para {{name}}.
+ *
+ * @module modules/{{dashCase name}}/routes
+ */
+
+import { Router } from 'express';
+import { {{camelCase name}}Controller } from '../controllers/{{dashCase name}}.controller.js';
+import { authMiddleware } from '../../../core/auth/middleware/auth.middleware.js';
+import { validateRequest } from '../../../shared/middleware/validation.middleware.js';
+import {
+  create{{pascalCase name}}Schema,
+  update{{pascalCase name}}Schema,
+  {{camelCase name}}QuerySchema,
+} from '../dto/{{dashCase name}}.dto.js';
+
+const router = Router();
+
+// Todas las rutas requieren autenticacion
+router.use(authMiddleware);
+
+/**
+ * @openapi
+ * /api/{{dashCase namePlural}}:
+ *   get:
+ *     summary: Lista todos los {{namePlural}}
+ *     tags: [{{pascalCase namePlural}}]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get(
+  '/',
+  validateRequest({ query: {{camelCase name}}QuerySchema }),
+  {{camelCase name}}Controller.list.bind({{camelCase name}}Controller)
+);
+
+/**
+ * @openapi
+ * /api/{{dashCase namePlural}}/{id}:
+ *   get:
+ *     summary: Obtiene un {{name}} por ID
+ *     tags: [{{pascalCase namePlural}}]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.get(
+  '/:id',
+  {{camelCase name}}Controller.getById.bind({{camelCase name}}Controller)
+);
+
+/**
+ * @openapi
+ * /api/{{dashCase namePlural}}:
+ *   post:
+ *     summary: Crea un nuevo {{name}}
+ *     tags: [{{pascalCase namePlural}}]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post(
+  '/',
+  validateRequest({ body: create{{pascalCase name}}Schema }),
+  {{camelCase name}}Controller.create.bind({{camelCase name}}Controller)
+);
+
+/**
+ * @openapi
+ * /api/{{dashCase namePlural}}/{id}:
+ *   put:
+ *     summary: Actualiza un {{name}}
+ *     tags: [{{pascalCase namePlural}}]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.put(
+  '/:id',
+  validateRequest({ body: update{{pascalCase name}}Schema }),
+  {{camelCase name}}Controller.update.bind({{camelCase name}}Controller)
+);
+
+/**
+ * @openapi
+ * /api/{{dashCase namePlural}}/{id}:
+ *   delete:
+ *     summary: Elimina un {{name}}
+ *     tags: [{{pascalCase namePlural}}]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.delete(
+  '/:id',
+  {{camelCase name}}Controller.delete.bind({{camelCase name}}Controller)
+);
+
+export { router as {{camelCase name}}Routes };
