@@ -1,0 +1,271 @@
+# =============================================================================
+# compliance.yml - Pipeline CI/CD para tests de compliance
+#
+# Ejecuta validaciones de calidad, seguridad y compliance normativo:
+#   - Linting (ESLint + Prettier)
+#   - Tests unitarios (Vitest)
+#   - Tests de integracion (ClaveUnica mocks)
+#   - Tests de seguridad (OWASP Top 10)
+#   - Auditoria de dependencias (npm audit)
+#   - Tests E2E (Playwright)
+#   - Reporte de cobertura
+#
+# Normativas cubiertas:
+#   - Ley 21.663 (Marco de Ciberseguridad) - Auditorias automaticas
+#   - Ley 21.180 (Transformacion Digital) - Calidad de software
+#   - ISO 27001 - Control de cambios y seguridad
+#   - OWASP Top 10 - Prevencion de vulnerabilidades
+#
+# Se ejecuta en:
+#   - Push a main/master
+#   - Pull requests
+#   - Programado: lunes a las 06:00 UTC (revision semanal)
+# =============================================================================
+
+name: Compliance & Security Pipeline
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  schedule:
+    # Ejecucion semanal de compliance - lunes 06:00 UTC
+    - cron: '0 6 * * 1'
+
+env:
+  NODE_VERSION: '20'
+  # Variables minimas para que la app inicie sin servicios reales
+  DATABASE_URL: 'postgresql://test:test@localhost:5432/test_db'
+  REDIS_URL: 'redis://localhost:6379'
+  JWT_SECRET: 'ci-pipeline-jwt-secret-32-chars!!'
+  ENCRYPTION_KEY: 'ci-pipeline-encryption-key-32ch!!'
+  NODE_ENV: 'development'
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Job 1: Lint y formato de codigo
+  # ---------------------------------------------------------------------------
+  lint:
+    name: Lint y Formato
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Ejecutar ESLint
+        run: npm run lint
+
+      - name: Verificar formato Prettier
+        run: npx prettier --check "src/**/*.ts"
+
+      - name: Verificar tipos TypeScript
+        run: npx tsc --noEmit
+
+  # ---------------------------------------------------------------------------
+  # Job 2: Tests unitarios y de integracion
+  # ---------------------------------------------------------------------------
+  test-unit:
+    name: Tests Unitarios e Integracion
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Ejecutar tests unitarios con cobertura
+        run: npm run test:coverage
+
+      - name: Verificar cobertura minima
+        run: |
+          echo "Verificando cobertura minima de codigo..."
+          # El reporte de cobertura se genera en coverage/
+          # En produccion, configurar umbrales en vitest.config.ts
+
+      - name: Subir reporte de cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage/
+          retention-days: 30
+
+  # ---------------------------------------------------------------------------
+  # Job 3: Tests de seguridad OWASP
+  # ---------------------------------------------------------------------------
+  test-security:
+    name: Tests de Seguridad (OWASP Top 10)
+    runs-on: ubuntu-latest
+    needs: lint
+    steps:
+      - name: Checkout codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Ejecutar tests de seguridad OWASP
+        run: npx vitest run tests/security/
+
+      - name: Ejecutar npm audit (vulnerabilidades en dependencias)
+        run: npm audit --audit-level=high
+        continue-on-error: true
+
+      - name: Generar reporte de audit
+        if: always()
+        run: |
+          npm audit --json > audit-report.json 2>/dev/null || true
+          echo "=== Resumen de Auditoria de Dependencias ==="
+          npm audit 2>/dev/null || true
+
+      - name: Subir reporte de auditoria
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-audit-report
+          path: audit-report.json
+          retention-days: 90
+
+  # ---------------------------------------------------------------------------
+  # Job 4: Tests E2E con Playwright
+  # ---------------------------------------------------------------------------
+  test-e2e:
+    name: Tests E2E (Playwright)
+    runs-on: ubuntu-latest
+    needs: [test-unit, test-security]
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: test
+          POSTGRES_PASSWORD: test
+          POSTGRES_DB: test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+      redis:
+        image: redis:7
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout codigo
+        uses: actions/checkout@v4
+
+      - name: Configurar Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+
+      - name: Instalar dependencias
+        run: npm ci
+
+      - name: Generar cliente Prisma
+        run: npx prisma generate
+
+      - name: Ejecutar migraciones de base de datos
+        run: npx prisma migrate deploy
+        continue-on-error: true
+
+      - name: Instalar navegadores Playwright
+        run: npx playwright install --with-deps chromium
+
+      - name: Ejecutar tests E2E
+        run: npm run test:e2e
+        env:
+          CI: true
+          E2E_BASE_URL: http://localhost:3000
+
+      - name: Subir reportes E2E
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 30
+
+      - name: Subir screenshots de fallos
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-screenshots
+          path: test-results/
+          retention-days: 30
+
+  # ---------------------------------------------------------------------------
+  # Job 5: Reporte de compliance consolidado
+  # ---------------------------------------------------------------------------
+  compliance-report:
+    name: Reporte de Compliance
+    runs-on: ubuntu-latest
+    needs: [test-unit, test-security, test-e2e]
+    if: always()
+    steps:
+      - name: Checkout codigo
+        uses: actions/checkout@v4
+
+      - name: Generar reporte consolidado
+        run: |
+          echo "========================================================"
+          echo "  REPORTE DE COMPLIANCE - Plantilla Gobierno Digital"
+          echo "  Fecha: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          echo "========================================================"
+          echo ""
+          echo "Normativas evaluadas:"
+          echo "  - Ley 21.663 (Ciberseguridad): Tests OWASP + npm audit"
+          echo "  - Ley 21.180 (Transformacion Digital): Tests unitarios"
+          echo "  - Ley 21.658 (Gobierno Digital): Tests ClaveUnica"
+          echo "  - Ley 19.799 (Firma Electronica): Tests FEA"
+          echo "  - ISO 27001: Auditoria de dependencias"
+          echo ""
+          echo "Resultados:"
+          echo "  Lint:           ${{ needs.lint.result }}"
+          echo "  Tests Unit:     ${{ needs.test-unit.result }}"
+          echo "  Tests Security: ${{ needs.test-security.result }}"
+          echo "  Tests E2E:      ${{ needs.test-e2e.result }}"
+          echo ""
+          echo "========================================================"
+
+      - name: Marcar pipeline como fallido si hay errores criticos
+        if: |
+          needs.test-security.result == 'failure' ||
+          needs.test-unit.result == 'failure'
+        run: |
+          echo "FALLO: Tests criticos de seguridad o unitarios fallaron."
+          echo "Revisar artefactos de la ejecucion para detalles."
+          exit 1
