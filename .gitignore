@@ -40,6 +40,10 @@ coverage/
 prisma/*.db
 prisma/*.db-journal
 
+# Python
+__pycache__/
+*.pyc
+
 # Cache
 .cache/
 .parcel-cache/
